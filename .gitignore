@@ -51,6 +51,7 @@ cli/decky
 
 # Local test tooling
 .pytest/
+.pytest_cache/
 .venv/
 
 # Built releases
