@@ -1,0 +1,11 @@
+{
+  "name": "Podman Compose",
+  "author": "decky-podman-compose",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": ["podman", "compose", "containers"],
+    "description": "Manage Podman Compose stacks from Decky.",
+    "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
+  }
+}
