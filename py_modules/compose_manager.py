@@ -7,6 +7,7 @@ from typing import Optional
 import decky
 
 from py_modules.settings import SettingsStore
+from py_modules.utils import clean_subprocess_env
 
 
 COMPOSE_FILENAMES = [
@@ -217,7 +218,7 @@ class ComposeManager:
         timeout = 600 if action == "pull" else 300 if action == "up" else 120
 
         decky.logger.info(f"Podman Compose: running command: {' '.join(cmd)} (cwd={stack['path']})")
-        env = os.environ.copy()
+        env = clean_subprocess_env()
         decky.logger.info(
             f"Podman Compose: command env: PATH={env.get('PATH', '')} "
             f"XDG_RUNTIME_DIR={env.get('XDG_RUNTIME_DIR', '')} "
@@ -243,13 +244,7 @@ class ComposeManager:
         return {"success": True, "message": message}
 
     async def _run(self, cmd: list[str], cwd: str, env: Optional[dict[str, str]] = None, timeout: int = 120) -> tuple[int, str, str]:
-        if env is None:
-            env = os.environ.copy()
-        # The Decky Loader process may bundle libraries (e.g. PyInstaller's
-        # /tmp/_MEI... directory in LD_LIBRARY_PATH) that conflict with system
-        # libraries required by podman/systemd-run. Use the system's library
-        # resolution for subprocesses.
-        env = {k: v for k, v in env.items() if k.upper() not in ("LD_LIBRARY_PATH", "LD_PRELOAD")}
+        env = clean_subprocess_env(env)
         try:
             # Run via bash -l to mimic an interactive terminal session as closely as
             # possible. Some compose providers misbehave when launched directly with

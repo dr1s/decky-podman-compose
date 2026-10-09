@@ -5,6 +5,8 @@ import re
 import shlex
 from typing import Optional
 
+from py_modules.utils import clean_subprocess_env
+
 
 MAX_LOG_LINES = 5000
 
@@ -45,10 +47,7 @@ class LogStreamer:
         result_lines = lines[start:]
         return {"lines": result_lines, "next_index": next_index}
 
-    @staticmethod
-    def _clean_env() -> dict[str, str]:
-        # Avoid PyInstaller/Decky bundled libraries interfering with podman.
-        return {k: v for k, v in os.environ.items() if k.upper() not in ("LD_LIBRARY_PATH", "LD_PRELOAD")}
+
 
     async def start(self, stack_name: str, stack_path: str, services: list = None) -> dict:
         import decky
@@ -66,7 +65,7 @@ class LogStreamer:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 stdin=asyncio.subprocess.DEVNULL,
-                env=self._clean_env(),
+                env=clean_subprocess_env(),
             )
             ps_stdout, ps_stderr = await ps_proc.communicate()
             ps_out = ps_stdout.decode("utf-8", errors="replace")
@@ -97,7 +96,7 @@ class LogStreamer:
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
                 stdin=asyncio.subprocess.DEVNULL,
-                env=self._clean_env(),
+                env=clean_subprocess_env(),
             )
         except FileNotFoundError:
             return {"success": False, "message": "podman not found"}
