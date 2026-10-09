@@ -1,12 +1,12 @@
 # Decky Podman Compose
 
-A Decky Loader plugin for managing Podman Compose stacks on Steam Deck.
+A Decky Loader plugin for managing Podman Compose stacks on SteamOS.
 
 ![screenshot](screenshot.jpg "Screenshot")
 
 ## Support
 
-This plugin is maintained primarily for personal use. It will only be updated if it stops working for me or if I am still actively using it.
+This plugin is maintained primarily for personal use. 
 
 - **GitHub Issues are turned off** and will not be accepted.
 - **Pull Requests are welcome** and will be accepted if they are useful and do not add maintenance burden.
@@ -52,7 +52,7 @@ Override files (e.g. `container-compose.override.yml`) are merged automatically 
 
 ## Install
 
-1. Make sure [Decky Loader](https://deckyloader.org/) is installed on your Steam Deck.
+1. Make sure [Decky Loader](https://deckyloader.org/) is installed on SteamOS.
 2. Download the latest `decky-podman-compose-<VERSION>.zip` from the [Releases](../../releases) page.
 3. In Game Mode, open the Quick Access Menu by pressing the **`...`** button.
 4. Open **Decky Loader → Settings → General** and toggle on **Developer Mode**.
@@ -61,7 +61,7 @@ Override files (e.g. `container-compose.override.yml`) are merged automatically 
 7. The plugin will appear in the Decky plugin list.
 
 > [!NOTE]
-> `podman` and `podman-compose` must be installed on your Steam Deck and available in `PATH` for this plugin to work.
+> `podman` and `podman-compose` must be installed on SteamOS and available in `PATH` for this plugin to work.
 
 ## Status colors
 
