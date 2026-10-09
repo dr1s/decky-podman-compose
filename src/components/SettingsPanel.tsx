@@ -1,4 +1,5 @@
-import { ButtonItem, DialogButton, PanelSectionRow, TextField } from "@decky/ui";
+import { DialogButton, PanelSectionRow, TextField } from "@decky/ui";
+import { Divider } from "./Divider";
 
 interface SettingsPanelProps {
   baseDir: string;
@@ -12,22 +13,23 @@ export function SettingsPanel({ baseDir, pendingAction, onBaseDirChange, onBrows
   return (
     <>
       <PanelSectionRow>
+        <TextField
+          label="Stacks directory"
+          value={baseDir}
+          onChange={(e: any) => onBaseDirChange(e.target.value)}
+        />
+      </PanelSectionRow>
+      <PanelSectionRow>
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
-          <TextField
-            label="Stacks directory"
-            value={baseDir}
-            onChange={(e: any) => onBaseDirChange(e.target.value)}
-          />
           <DialogButton onClick={onBrowse}>
             Browse...
           </DialogButton>
+          <DialogButton onClick={onSave} disabled={pendingAction !== null}>
+            Save & Rescan
+          </DialogButton>
         </div>
       </PanelSectionRow>
-      <PanelSectionRow>
-        <ButtonItem layout="below" onClick={onSave} disabled={pendingAction !== null}>
-          Save & Rescan
-        </ButtonItem>
-      </PanelSectionRow>
+      <Divider />
     </>
   );
 }

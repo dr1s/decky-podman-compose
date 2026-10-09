@@ -1,30 +1,16 @@
-import { ButtonItem, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
+import { DialogButton, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
 import { ALL_SERVICES } from "../constants";
 import { useStacks } from "../hooks/useStacks";
 
 declare const process: { env: Record<string, string | undefined> };
 import { ActionsPanel } from "./ActionsPanel";
 import { DirectoryBrowserModal } from "./DirectoryBrowserModal";
+import { Divider } from "./Divider";
 import { LogModal } from "./LogModal";
 import { ServiceSelector } from "./ServiceSelector";
 import { SettingsPanel } from "./SettingsPanel";
 import { StackSelector } from "./StackSelector";
 import { StatusPanel } from "./StatusPanel";
-
-function Divider() {
-  return (
-    <PanelSectionRow>
-      <div
-        style={{
-          height: "1px",
-          backgroundColor: "#444",
-          margin: "8px 0",
-          width: "100%",
-        }}
-      />
-    </PanelSectionRow>
-  );
-}
 
 export function Content() {
   const {
@@ -105,9 +91,9 @@ export function Content() {
           <ActionsPanel pendingAction={pendingAction} onAction={runAction} />
           <Divider />
           <PanelSectionRow>
-            <ButtonItem layout="below" onClick={openLogModal} disabled={!selectedStack}>
+            <DialogButton onClick={openLogModal} disabled={!selectedStack}>
               Open logs
-            </ButtonItem>
+            </DialogButton>
           </PanelSectionRow>
         </>
       )}
