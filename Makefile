@@ -8,6 +8,7 @@ VERSION := $(shell node -p "require('./package.json').version" 2>/dev/null || ec
 all: release
 
 build:
+	npm install
 	npm run build
 
 clean:
