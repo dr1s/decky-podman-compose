@@ -60,14 +60,11 @@ class ComposeManager:
     def get_stack(self, stack_name: str) -> Optional[dict]:
         return self._stacks.get(stack_name)
 
-    def _get_stack(self, stack_name: str) -> Optional[dict]:
-        return self.get_stack(stack_name)
-
     async def get_services(self, stack_name: str) -> list[str]:
         if stack_name in self._services_cache:
             return self._services_cache[stack_name]
 
-        stack = self._get_stack(stack_name)
+        stack = self.get_stack(stack_name)
         if not stack:
             return []
         code, stdout, _stderr = await self._run(
@@ -81,7 +78,7 @@ class ComposeManager:
         return services
 
     async def get_status_detail(self, stack_name: str) -> dict:
-        stack = self._get_stack(stack_name)
+        stack = self.get_stack(stack_name)
         if not stack:
             return {"status": "unknown", "services": []}
 
@@ -197,7 +194,7 @@ class ComposeManager:
         return "stopped"
 
     async def run_action(self, stack_name: str, action: str, services: Optional[list[str]] = None) -> dict:
-        stack = self._get_stack(stack_name)
+        stack = self.get_stack(stack_name)
         if not stack:
             return {"success": False, "message": f"Stack not found: {stack_name}"}
 
