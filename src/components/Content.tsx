@@ -1,6 +1,8 @@
 import { ButtonItem, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
 import { ALL_SERVICES } from "../constants";
 import { useStacks } from "../hooks/useStacks";
+
+declare const process: { env: Record<string, string | undefined> };
 import { ActionsPanel } from "./ActionsPanel";
 import { DirectoryBrowserModal } from "./DirectoryBrowserModal";
 import { LogModal } from "./LogModal";
@@ -41,7 +43,8 @@ export function Content() {
   } = useStacks();
 
   const handleBrowseBaseDir = () => {
-    const startPath = baseDir.startsWith("~") ? baseDir.replace("~", "/home/deck") : baseDir;
+    const home = process.env.HOME || "/home/deck";
+    const startPath = baseDir.startsWith("~") ? baseDir.replace("~", home) : baseDir;
     const result = showModal(
       <DirectoryBrowserModal
         initialPath={startPath}
