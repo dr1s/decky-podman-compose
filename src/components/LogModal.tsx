@@ -40,7 +40,7 @@ export function LogModal({ stackName, services, onClose }: { stackName: string; 
       if (interval) clearInterval(interval);
       stopLogStream(stackName);
     };
-  }, [stackName]);
+  }, [stackName, services]);
 
   useEffect(() => {
     if (logRef.current) {
@@ -70,7 +70,6 @@ export function LogModal({ stackName, services, onClose }: { stackName: string; 
               wordBreak: "break-word",
               pointerEvents: "auto",
             }}
-            onWheel={(e) => e.stopPropagation()}
           >
             {logs.length === 0 ? "// waiting for logs..." : logs.join("\n")}
           </div>
