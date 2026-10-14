@@ -61,7 +61,16 @@ Override files (e.g. `container-compose.override.yml`) are merged automatically 
 7. The plugin will appear in the Decky plugin list.
 
 > [!NOTE]
-> `podman` and `podman-compose` must be installed on SteamOS and available in `PATH` for this plugin to work.
+> This plugin ships with `podman-compose` bundled, so no separate `podman-compose` install is required.
+> `podman` is already installed by default on SteamOS and is used from `PATH`.
+>
+> To use a custom `podman-compose` binary instead, set `DECKY_PODMAN_COMPOSE_PATH` in your login shell profile (e.g. `~/.bash_profile` or `~/.profile`):
+>
+> ```bash
+> export DECKY_PODMAN_COMPOSE_PATH=/path/to/your/podman-compose
+> ```
+>
+> The plugin reads the login shell environment at startup, so `.bashrc` is not sourced.
 
 ## Status colors
 

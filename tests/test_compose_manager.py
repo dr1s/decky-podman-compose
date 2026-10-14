@@ -2,6 +2,8 @@ import asyncio
 import os
 import tempfile
 from unittest.mock import MagicMock
+
+import py_modules.compose_manager as compose_manager_module
 from py_modules.compose_manager import ComposeManager
 
 
@@ -10,6 +12,13 @@ def _setup_manager(base):
     settings.get_base_dir.return_value = base
     mgr = ComposeManager(settings)
     return mgr
+
+
+def _expected_base_cmd():
+    return [
+        "/usr/bin/python3",
+        os.path.join(os.path.dirname(compose_manager_module.__file__), "vendor", "podman_compose.py"),
+    ]
 
 
 def test_scan_stacks_finds_supported_files():
@@ -50,7 +59,7 @@ def test_run_action_builds_up_command():
 
         mgr._run = fake_run
         result = asyncio.run(mgr.run_action("stack1", "up", ["svc1"]))
-        assert captured["cmds"][0] == ["podman", "compose", "--verbose", "up", "-d", "svc1"]
+        assert captured["cmds"][0] == [*_expected_base_cmd(), "up", "-d", "svc1"]
         assert captured["cwd"] == os.path.join(base, "stack1")
         assert result["success"] is True
 
@@ -70,7 +79,7 @@ def test_run_action_builds_down_command_no_services():
 
         mgr._run = fake_run
         result = asyncio.run(mgr.run_action("stack1", "down"))
-        assert captured["cmd"] == ["podman", "compose", "down"]
+        assert captured["cmd"] == [*_expected_base_cmd(), "down"]
         assert result["success"] is True
 
 
@@ -89,7 +98,7 @@ def test_run_action_builds_down_command_with_services():
 
         mgr._run = fake_run
         result = asyncio.run(mgr.run_action("stack1", "down", ["svc1"]))
-        assert captured["cmd"] == ["podman", "compose", "down", "svc1"]
+        assert captured["cmd"] == [*_expected_base_cmd(), "down", "svc1"]
         assert result["success"] is True
 
 
@@ -108,7 +117,7 @@ def test_run_action_builds_pull_command():
 
         mgr._run = fake_run
         result = asyncio.run(mgr.run_action("stack1", "pull", ["svc1"]))
-        assert captured["cmd"] == ["podman", "compose", "pull", "svc1"]
+        assert captured["cmd"] == [*_expected_base_cmd(), "pull", "svc1"]
         assert result["success"] is True
 
 
