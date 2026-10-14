@@ -141,10 +141,14 @@ async def test_start_returns_failure_when_no_containers():
 
     with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
         mock_exec.return_value = FakeProc(returncode=0, stdout=b"[]")
-        result = await streamer.start("s1", "/tmp/stack", [])
+        result = await streamer.start("s1", "/tmp/stack", [], ["/usr/bin/python3", "/tmp/podman_compose.py"])
 
     assert result["success"] is False
     assert "No containers found" in result["message"]
+    # Verify the ps discovery used the provided compose base command.
+    ps_call = mock_exec.call_args_list[0]
+    shell_cmd = ps_call.args[2]
+    assert "/usr/bin/python3 /tmp/podman_compose.py ps --format json" in shell_cmd
 
 
 @pytest.mark.asyncio

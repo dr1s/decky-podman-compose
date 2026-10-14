@@ -61,7 +61,7 @@ class ComposeManager:
     def get_stack(self, stack_name: str) -> Optional[dict]:
         return self._stacks.get(stack_name)
 
-    def _compose_base_cmd(self) -> list[str]:
+    def compose_base_cmd(self) -> list[str]:
         """Return the base command for running podman-compose.
 
         Uses DECKY_PODMAN_COMPOSE_PATH if set, otherwise runs the bundled
@@ -81,7 +81,7 @@ class ComposeManager:
         if not stack:
             return []
         code, stdout, _stderr = await self._run(
-            [*self._compose_base_cmd(), "config", "--services"],
+            [*self.compose_base_cmd(), "config", "--services"],
             stack["path"],
         )
         if code != 0:
@@ -97,7 +97,7 @@ class ComposeManager:
 
         services = await self.get_services(stack_name)
         code, stdout, _stderr = await self._run(
-            [*self._compose_base_cmd(), "ps", "--format", "json"],
+            [*self.compose_base_cmd(), "ps", "--format", "json"],
             stack["path"],
         )
         if code != 0:
@@ -159,7 +159,7 @@ class ComposeManager:
             return {"success": False, "message": f"Stack not found: {stack_name}"}
 
         services = services or []
-        cmd = [*self._compose_base_cmd()]
+        cmd = [*self.compose_base_cmd()]
 
         if action == "up":
             cmd.extend(["up", "-d"])

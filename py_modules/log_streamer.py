@@ -49,7 +49,7 @@ class LogStreamer:
 
 
 
-    async def start(self, stack_name: str, stack_path: str, services: list = None) -> dict:
+    async def start(self, stack_name: str, stack_path: str, services: list = None, compose_base_cmd: list[str] = None) -> dict:
         import decky
         services = services or []
         await self.stop(stack_name)
@@ -59,7 +59,9 @@ class LogStreamer:
             # Discover container names first. podman-compose's `logs -f` can exit
             # immediately when run non-interactively; reading logs directly from
             # podman for each container is more reliable.
-            ps_cmd = f"cd {shlex.quote(stack_path)} && podman compose ps --format json"
+            compose_base_cmd = compose_base_cmd or ["podman", "compose"]
+            compose_cmd = " ".join(shlex.quote(arg) for arg in compose_base_cmd)
+            ps_cmd = f"cd {shlex.quote(stack_path)} && {compose_cmd} ps --format json"
             ps_proc = await asyncio.create_subprocess_exec(
                 "bash", "-lc", ps_cmd,
                 stdout=asyncio.subprocess.PIPE,

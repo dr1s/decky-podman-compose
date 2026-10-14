@@ -202,7 +202,7 @@ class Plugin:
             stack = self.compose.get_stack(stack_name)
             if not stack:
                 return {"success": False, "message": f"Stack not found: {stack_name}"}
-            return await self.logs.start(stack_name, stack["path"], services or [])
+            return await self.logs.start(stack_name, stack["path"], services or [], self.compose.compose_base_cmd())
         except Exception as e:
             decky.logger.error(f"Podman Compose: start_log_stream exception: {e}")
             return {"success": False, "message": f"Internal error: {e}"}
