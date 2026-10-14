@@ -186,7 +186,7 @@ class Plugin:
             return await self.compose.get_status_detail(stack_name)
         except Exception as e:
             decky.logger.error(f"Podman Compose: get_stack_status_detail exception: {e}")
-            return {"status": "unknown", "services": []}
+            return {"services": []}
 
     async def compose_action(self, stack_name: str, action: str, services: list = None) -> dict:
         try:

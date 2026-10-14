@@ -93,7 +93,7 @@ class ComposeManager:
     async def get_status_detail(self, stack_name: str) -> dict:
         stack = self.get_stack(stack_name)
         if not stack:
-            return {"status": "unknown", "services": []}
+            return {"services": []}
 
         services = await self.get_services(stack_name)
         code, stdout, _stderr = await self._run(
@@ -101,11 +101,11 @@ class ComposeManager:
             stack["path"],
         )
         if code != 0:
-            return {"status": "unknown", "services": []}
+            return {"services": []}
         try:
             containers = json.loads(stdout)
         except json.JSONDecodeError:
-            return {"status": "unknown", "services": []}
+            return {"services": []}
 
         container_by_service: dict[str, dict] = {}
         for c in containers:
@@ -127,7 +127,6 @@ class ComposeManager:
                     "name": svc,
                     "state": "not running",
                     "health": "",
-                    "status": "not running",
                 })
                 continue
             state = c.get("State", "unknown").lower()
@@ -150,61 +149,9 @@ class ComposeManager:
                 "name": svc,
                 "state": state,
                 "health": health,
-                "status": status_text or state,
             })
 
-        overall = self._aggregate_status(service_statuses)
-        return {"status": overall, "services": service_statuses}
-
-    @staticmethod
-    def _aggregate_status(service_statuses: list[dict]) -> str:
-        if not service_statuses:
-            return "stopped"
-
-        total = len(service_statuses)
-        running = 0
-        completed = 0
-        created_count = 0
-        healthy = 0
-        unhealthy = 0
-        starting = 0
-        for s in service_statuses:
-            state = s["state"]
-            health = s["health"]
-            if state == "running":
-                running += 1
-                if health == "unhealthy":
-                    unhealthy += 1
-                elif health == "healthy":
-                    healthy += 1
-                elif health == "starting":
-                    starting += 1
-            elif state == "completed":
-                completed += 1
-            elif state == "created":
-                created_count += 1
-
-        if running == total:
-            if unhealthy > 0:
-                return "unhealthy"
-            elif starting > 0:
-                return "starting"
-            return "running"
-        if running + completed == total:
-            if unhealthy > 0:
-                return "unhealthy"
-            elif starting > 0:
-                return "starting"
-            return "running"
-        if completed == total:
-            return "completed"
-        if created_count == total:
-            return "created"
-        if running > 0 or completed > 0:
-            return "partial"
-        if created_count > 0:
-            return f"created ({created_count}/{total})"
-        return "stopped"
+        return {"services": service_statuses}
 
     async def run_action(self, stack_name: str, action: str, services: Optional[list[str]] = None) -> dict:
         stack = self.get_stack(stack_name)

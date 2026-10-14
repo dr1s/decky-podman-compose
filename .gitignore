@@ -53,6 +53,7 @@ cli/decky
 .pytest/
 .pytest_cache/
 .venv/
+.coverage
 
 # Built releases
 releases/

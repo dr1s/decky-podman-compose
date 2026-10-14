@@ -164,7 +164,6 @@ def test_get_status_detail_returns_service_states():
         mgr.get_services = fake_services
         mgr._run = fake_run
         detail = asyncio.run(mgr.get_status_detail("stack1"))
-        assert detail["status"] == "running"
         web = next(s for s in detail["services"] if s["name"] == "web")
         db = next(s for s in detail["services"] if s["name"] == "db")
         assert web["state"] == "running"
@@ -259,7 +258,7 @@ def test_scan_stacks_skips_files_and_symlinks_outside_base():
         assert stacks[0]["name"] == "valid"
 
 
-def test_get_status_detail_returns_unknown_when_no_services():
+def test_get_status_detail_returns_empty_when_no_services():
     with tempfile.TemporaryDirectory() as base:
         os.makedirs(os.path.join(base, "stack1"))
         open(os.path.join(base, "stack1", "docker-compose.yml"), "w").close()
@@ -275,7 +274,7 @@ def test_get_status_detail_returns_unknown_when_no_services():
         mgr.get_services = fake_services
         mgr._run = fake_run
         detail = asyncio.run(mgr.get_status_detail("stack1"))
-        assert detail["status"] == "stopped"
+        assert detail["services"] == []
 
 
 def test_get_status_detail_parses_name_when_label_missing():
@@ -294,11 +293,10 @@ def test_get_status_detail_parses_name_when_label_missing():
         mgr.get_services = fake_services
         mgr._run = fake_run
         detail = asyncio.run(mgr.get_status_detail("stack1"))
-        assert detail["status"] == "running"
         assert detail["services"][0]["name"] == "web"
 
 
-def test_get_status_detail_returns_unknown_on_run_failure():
+def test_get_status_detail_returns_empty_on_run_failure():
     with tempfile.TemporaryDirectory() as base:
         os.makedirs(os.path.join(base, "stack1"))
         open(os.path.join(base, "stack1", "docker-compose.yml"), "w").close()
@@ -314,27 +312,7 @@ def test_get_status_detail_returns_unknown_on_run_failure():
         mgr.get_services = fake_services
         mgr._run = fake_run
         detail = asyncio.run(mgr.get_status_detail("stack1"))
-        assert detail["status"] == "unknown"
-
-
-def test_aggregate_status_empty():
-    assert ComposeManager._aggregate_status([]) == "stopped"
-
-
-def test_aggregate_status_all_states():
-    assert ComposeManager._aggregate_status([{"state": "running", "health": ""}]) == "running"
-    assert ComposeManager._aggregate_status([{"state": "running", "health": "healthy"}]) == "running"
-    assert ComposeManager._aggregate_status([{"state": "running", "health": "unhealthy"}]) == "unhealthy"
-    assert ComposeManager._aggregate_status([{"state": "running", "health": "starting"}]) == "starting"
-    # A single completed service is treated as running because the "completed"
-    # branch is only reached when the earlier "running + completed == total"
-    # guard is false, which never happens for all-completed services.
-    assert ComposeManager._aggregate_status([{"state": "completed", "health": ""}]) == "running"
-    assert ComposeManager._aggregate_status([{"state": "created", "health": ""}]) == "created"
-    assert ComposeManager._aggregate_status([{"state": "running", "health": ""}, {"state": "completed", "health": ""}]) == "running"
-    assert ComposeManager._aggregate_status([{"state": "running", "health": ""}, {"state": "created", "health": ""}]) == "partial"
-    assert ComposeManager._aggregate_status([{"state": "created", "health": ""}, {"state": "stopped", "health": ""}]) == "created (1/2)"
-    assert ComposeManager._aggregate_status([{"state": "stopped", "health": ""}, {"state": "stopped", "health": ""}]) == "stopped"
+        assert detail["services"] == []
 
 
 def test_run_action_rejects_unknown_action():
@@ -413,3 +391,4 @@ async def test_run_command_not_found():
         mgr._run = fake_run
         result = await mgr.run_action("stack1", "up")
         assert result["success"] is False
+        assert "Command not found" in result["message"]

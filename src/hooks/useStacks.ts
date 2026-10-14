@@ -64,7 +64,7 @@ export function useStacks(): UseStacksResult {
       setStatusDetail(detail);
     } catch (e) {
       console.error("Failed to load status", e);
-      setStatusDetail({ status: "unknown", services: [] });
+      setStatusDetail({ services: [] });
     }
   };
 
