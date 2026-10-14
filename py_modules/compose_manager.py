@@ -61,6 +61,18 @@ class ComposeManager:
     def get_stack(self, stack_name: str) -> Optional[dict]:
         return self._stacks.get(stack_name)
 
+    def _compose_base_cmd(self) -> list[str]:
+        """Return the base command for running podman-compose.
+
+        Uses DECKY_PODMAN_COMPOSE_PATH if set, otherwise runs the bundled
+        podman_compose.py via the system Python interpreter.
+        """
+        override = os.environ.get("DECKY_PODMAN_COMPOSE_PATH")
+        if override:
+            return [override]
+        bundled = os.path.join(os.path.dirname(__file__), "vendor", "podman_compose.py")
+        return ["/usr/bin/python3", bundled]
+
     async def get_services(self, stack_name: str) -> list[str]:
         if stack_name in self._services_cache:
             return self._services_cache[stack_name]
@@ -69,7 +81,7 @@ class ComposeManager:
         if not stack:
             return []
         code, stdout, _stderr = await self._run(
-            ["podman", "compose", "config", "--services"],
+            [*self._compose_base_cmd(), "config", "--services"],
             stack["path"],
         )
         if code != 0:
@@ -85,7 +97,7 @@ class ComposeManager:
 
         services = await self.get_services(stack_name)
         code, stdout, _stderr = await self._run(
-            ["podman", "compose", "ps", "--format", "json"],
+            [*self._compose_base_cmd(), "ps", "--format", "json"],
             stack["path"],
         )
         if code != 0:
@@ -200,7 +212,7 @@ class ComposeManager:
             return {"success": False, "message": f"Stack not found: {stack_name}"}
 
         services = services or []
-        cmd = ["podman", "compose"]
+        cmd = [*self._compose_base_cmd()]
 
         if action == "up":
             cmd.extend(["--verbose", "up", "-d"])
@@ -222,6 +234,7 @@ class ComposeManager:
         decky.logger.info(
             f"Podman Compose: command env: PATH={env.get('PATH', '')} "
             f"XDG_RUNTIME_DIR={env.get('XDG_RUNTIME_DIR', '')} "
+            f"DECKY_PODMAN_COMPOSE_PATH={env.get('DECKY_PODMAN_COMPOSE_PATH', '')} "
             f"PODMAN_COMPOSE_PROVIDER={env.get('PODMAN_COMPOSE_PROVIDER', '')} "
             f"HOME={env.get('HOME', '')}"
         )
@@ -234,11 +247,18 @@ class ComposeManager:
         message = stdout.strip() if stdout.strip() else stderr.strip()
         if code != 0:
             decky.logger.error(f"Podman Compose: command failed: {' '.join(cmd)} (cwd={stack['path']})")
+            override = os.environ.get("DECKY_PODMAN_COMPOSE_PATH")
             if "looking up compose provider failed" in stderr.lower() or "compose provider" in stderr.lower():
-                message = (
-                    "No compose provider found. Install podman-compose or docker-compose. "
-                    f"Original error: {message}"
-                )
+                if override:
+                    message = (
+                        f"Custom compose binary ({override}) could not find a compose provider. "
+                        f"Original error: {message}"
+                    )
+                else:
+                    message = (
+                        "podman-compose failed. Ensure podman is installed and available in PATH. "
+                        f"Original error: {message}"
+                    )
             return {"success": False, "message": message}
 
         return {"success": True, "message": message}
