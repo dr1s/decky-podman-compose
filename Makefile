@@ -1,4 +1,4 @@
-.PHONY: all build clean release versioned
+.PHONY: all install build clean release versioned
 
 PLUGIN_NAME := decky-podman-compose
 RELEASE_DIR := releases
@@ -7,8 +7,10 @@ VERSION := $(shell node -p "require('./package.json').version" 2>/dev/null || ec
 
 all: release
 
-build:
+install:
 	npm install
+
+build:
 	npm run build
 
 clean:

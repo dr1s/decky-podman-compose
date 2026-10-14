@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check version is not a dev build
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" == *-dev ]]; then
+            echo "Error: package.json version ($VERSION) ends with '-dev'. Remove the suffix before tagging."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build release
+        run: make versioned
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: v${{ env.version }}
+          files: releases/decky-podman-compose-v${{ env.version }}.zip
+          generate_release_notes: true
