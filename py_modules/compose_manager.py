@@ -215,7 +215,7 @@ class ComposeManager:
         cmd = [*self._compose_base_cmd()]
 
         if action == "up":
-            cmd.extend(["--verbose", "up", "-d"])
+            cmd.extend(["up", "-d"])
             cmd.extend(services)
         elif action == "down":
             cmd.append("down")

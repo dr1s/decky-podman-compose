@@ -59,7 +59,7 @@ def test_run_action_builds_up_command():
 
         mgr._run = fake_run
         result = asyncio.run(mgr.run_action("stack1", "up", ["svc1"]))
-        assert captured["cmds"][0] == [*_expected_base_cmd(), "--verbose", "up", "-d", "svc1"]
+        assert captured["cmds"][0] == [*_expected_base_cmd(), "up", "-d", "svc1"]
         assert captured["cwd"] == os.path.join(base, "stack1")
         assert result["success"] is True
 
