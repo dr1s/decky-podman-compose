@@ -3,6 +3,8 @@ import os
 import tempfile
 from unittest.mock import MagicMock
 
+import pytest
+
 import py_modules.compose_manager as compose_manager_module
 from py_modules.compose_manager import ComposeManager
 
@@ -60,7 +62,7 @@ def test_run_action_builds_up_command():
         mgr._run = fake_run
         result = asyncio.run(mgr.run_action("stack1", "up", ["svc1"]))
         assert captured["cmds"][0] == [*_expected_base_cmd(), "up", "-d", "svc1"]
-        assert captured["cwd"] == os.path.join(base, "stack1")
+        assert os.path.realpath(captured["cwd"]) == os.path.realpath(os.path.join(base, "stack1"))
         assert result["success"] is True
 
 
@@ -234,3 +236,180 @@ def test_run_action_uses_action_specific_timeouts():
         assert timeouts["pull"] == 600
         assert timeouts["up"] == 300
         assert timeouts["stop"] == 120
+
+
+def test_scan_stacks_returns_empty_for_missing_base_dir():
+    mgr = _setup_manager("/definitely/does/not/exist")
+    assert mgr.scan_stacks() == []
+    assert mgr._stacks == {}
+
+
+def test_scan_stacks_skips_files_and_symlinks_outside_base():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "valid"))
+        open(os.path.join(base, "valid", "docker-compose.yml"), "w").close()
+        # A file directly in base should be ignored.
+        open(os.path.join(base, "not-a-dir"), "w").close()
+        # A symlink pointing outside base should be ignored.
+        os.symlink("/", os.path.join(base, "root-link"))
+
+        mgr = _setup_manager(base)
+        stacks = mgr.scan_stacks()
+        assert len(stacks) == 1
+        assert stacks[0]["name"] == "valid"
+
+
+def test_get_status_detail_returns_unknown_when_no_services():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "stack1"))
+        open(os.path.join(base, "stack1", "docker-compose.yml"), "w").close()
+        mgr = _setup_manager(base)
+        mgr.scan_stacks()
+
+        async def fake_services(stack_name):
+            return []
+
+        async def fake_run(cmd, cwd, env=None, timeout=None):
+            return (0, "[]", "")
+
+        mgr.get_services = fake_services
+        mgr._run = fake_run
+        detail = asyncio.run(mgr.get_status_detail("stack1"))
+        assert detail["status"] == "stopped"
+
+
+def test_get_status_detail_parses_name_when_label_missing():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "stack1"))
+        open(os.path.join(base, "stack1", "docker-compose.yml"), "w").close()
+        mgr = _setup_manager(base)
+        mgr.scan_stacks()
+
+        async def fake_services(stack_name):
+            return ["web"]
+
+        async def fake_run(cmd, cwd, env=None, timeout=None):
+            return (0, '[{"Name": "stack1_web_1", "State": "running", "Status": "Up"}]', "")
+
+        mgr.get_services = fake_services
+        mgr._run = fake_run
+        detail = asyncio.run(mgr.get_status_detail("stack1"))
+        assert detail["status"] == "running"
+        assert detail["services"][0]["name"] == "web"
+
+
+def test_get_status_detail_returns_unknown_on_run_failure():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "stack1"))
+        open(os.path.join(base, "stack1", "docker-compose.yml"), "w").close()
+        mgr = _setup_manager(base)
+        mgr.scan_stacks()
+
+        async def fake_services(stack_name):
+            return ["web"]
+
+        async def fake_run(cmd, cwd, env=None, timeout=None):
+            return (1, "", "error")
+
+        mgr.get_services = fake_services
+        mgr._run = fake_run
+        detail = asyncio.run(mgr.get_status_detail("stack1"))
+        assert detail["status"] == "unknown"
+
+
+def test_aggregate_status_empty():
+    assert ComposeManager._aggregate_status([]) == "stopped"
+
+
+def test_aggregate_status_all_states():
+    assert ComposeManager._aggregate_status([{"state": "running", "health": ""}]) == "running"
+    assert ComposeManager._aggregate_status([{"state": "running", "health": "healthy"}]) == "running"
+    assert ComposeManager._aggregate_status([{"state": "running", "health": "unhealthy"}]) == "unhealthy"
+    assert ComposeManager._aggregate_status([{"state": "running", "health": "starting"}]) == "starting"
+    # A single completed service is treated as running because the "completed"
+    # branch is only reached when the earlier "running + completed == total"
+    # guard is false, which never happens for all-completed services.
+    assert ComposeManager._aggregate_status([{"state": "completed", "health": ""}]) == "running"
+    assert ComposeManager._aggregate_status([{"state": "created", "health": ""}]) == "created"
+    assert ComposeManager._aggregate_status([{"state": "running", "health": ""}, {"state": "completed", "health": ""}]) == "running"
+    assert ComposeManager._aggregate_status([{"state": "running", "health": ""}, {"state": "created", "health": ""}]) == "partial"
+    assert ComposeManager._aggregate_status([{"state": "created", "health": ""}, {"state": "stopped", "health": ""}]) == "created (1/2)"
+    assert ComposeManager._aggregate_status([{"state": "stopped", "health": ""}, {"state": "stopped", "health": ""}]) == "stopped"
+
+
+def test_run_action_rejects_unknown_action():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "stack1"))
+        open(os.path.join(base, "stack1", "container-compose.yml"), "w").close()
+        mgr = _setup_manager(base)
+        mgr.scan_stacks()
+        result = asyncio.run(mgr.run_action("stack1", "explode"))
+        assert result["success"] is False
+        assert "Unknown action" in result["message"]
+
+
+@pytest.mark.asyncio
+async def test_run_action_returns_failure_on_nonzero_exit():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "stack1"))
+        open(os.path.join(base, "stack1", "container-compose.yml"), "w").close()
+        mgr = _setup_manager(base)
+        mgr.scan_stacks()
+
+        async def fake_run(cmd, cwd, env=None, timeout=None):
+            return (1, "", "something failed")
+
+        mgr._run = fake_run
+        result = await mgr.run_action("stack1", "up")
+        assert result["success"] is False
+        assert "something failed" in result["message"]
+
+
+@pytest.mark.asyncio
+async def test_run_handles_compose_provider_error_message():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "stack1"))
+        open(os.path.join(base, "stack1", "container-compose.yml"), "w").close()
+        mgr = _setup_manager(base)
+        mgr.scan_stacks()
+
+        async def fake_run(cmd, cwd, env=None, timeout=None):
+            return (1, "", "looking up compose provider failed")
+
+        mgr._run = fake_run
+        result = await mgr.run_action("stack1", "up")
+        assert result["success"] is False
+        assert "podman-compose failed" in result["message"]
+
+
+@pytest.mark.asyncio
+async def test_run_subprocess_timeout():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "stack1"))
+        open(os.path.join(base, "stack1", "container-compose.yml"), "w").close()
+        mgr = _setup_manager(base)
+        mgr.scan_stacks()
+
+        async def fake_run(cmd, cwd, env=None, timeout=None):
+            return (124, "", "Command timed out")
+
+        mgr._run = fake_run
+        result = await mgr.run_action("stack1", "up")
+        assert result["success"] is False
+        assert "timed out" in result["message"]
+
+
+@pytest.mark.asyncio
+async def test_run_command_not_found():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "stack1"))
+        open(os.path.join(base, "stack1", "container-compose.yml"), "w").close()
+        mgr = _setup_manager(base)
+        mgr.scan_stacks()
+
+        async def fake_run(cmd, cwd, env=None, timeout=None):
+            return (1, "", "Command not found: /usr/bin/python3")
+
+        mgr._run = fake_run
+        result = await mgr.run_action("stack1", "up")
+        assert result["success"] is False

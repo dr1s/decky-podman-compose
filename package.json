@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "test": "PYTHONPATH=. .venv/bin/python3 -m pytest tests/ -v"
+    "test": "make test"
   },
   "author": "dr1s <dr1s@users.noreply.github.com>",
   "license": "MIT",

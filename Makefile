@@ -1,4 +1,4 @@
-.PHONY: all install build clean release versioned vendor
+.PHONY: all install build test clean release versioned vendor
 
 PLUGIN_NAME := decky-podman-compose
 RELEASE_DIR := releases
@@ -13,6 +13,13 @@ install:
 
 build:
 	npm run build
+
+test:
+	if [ -d ".venv" ] && [ -f ".venv/bin/python3" ]; then \
+		.venv/bin/python3 -m pytest tests/ -v; \
+	else \
+		python3 -m pytest tests/ -v; \
+	fi
 
 clean:
 	rm -rf $(DIST_DIR)
