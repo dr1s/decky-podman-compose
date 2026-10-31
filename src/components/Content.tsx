@@ -1,4 +1,4 @@
-import { DialogButton, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
+import { DialogButton, Navigation, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
 import { ALL_SERVICES } from "../constants";
 import { useStacks } from "../hooks/useStacks";
 
@@ -6,7 +6,6 @@ declare const process: { env: Record<string, string | undefined> };
 import { ActionsPanel } from "./ActionsPanel";
 import { DirectoryBrowserModal } from "./DirectoryBrowserModal";
 import { Divider } from "./Divider";
-import { LogModal } from "./LogModal";
 import { ServiceSelector } from "./ServiceSelector";
 import { SettingsPanel } from "./SettingsPanel";
 import { StackSelector } from "./StackSelector";
@@ -46,23 +45,12 @@ export function Content() {
     );
   };
 
-  const openLogModal = () => {
+  const openLogs = () => {
     if (selectedStack === undefined) return;
     const svcs = selectedService === ALL_SERVICES ? [] : [selectedService];
-    const title = svcs.length > 0 ? `Logs: ${selectedStack}/${svcs[0]}` : `Logs: ${selectedStack}`;
-    const result = showModal(
-      <LogModal
-        stackName={selectedStack}
-        services={svcs}
-        onClose={() => result.Close()}
-      />,
-      undefined,
-      {
-        popupWidth: 900,
-        popupHeight: 650,
-        strTitle: title,
-      }
-    );
+    const servicesParam = svcs.length > 0 ? `?services=${encodeURIComponent(svcs.join(","))}` : "";
+    Navigation.Navigate(`/decky/podman-compose/logs?stack=${encodeURIComponent(selectedStack)}${servicesParam}`);
+    Navigation.CloseSideMenus();
   };
 
   return (
@@ -91,7 +79,7 @@ export function Content() {
           <ActionsPanel pendingAction={pendingAction} onAction={runAction} />
           <Divider />
           <PanelSectionRow>
-            <DialogButton onClick={openLogModal} disabled={!selectedStack}>
+            <DialogButton onClick={openLogs} disabled={!selectedStack}>
               Open logs
             </DialogButton>
           </PanelSectionRow>
