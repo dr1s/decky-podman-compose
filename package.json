@@ -1,6 +1,6 @@
 {
   "name": "decky-podman-compose",
-  "version": "0.1.4-dev",
+  "version": "0.2.0",
   "description": "Manage Podman Compose stacks from Decky",
   "type": "module",
   "scripts": {
