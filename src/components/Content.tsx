@@ -32,7 +32,7 @@ export function Content() {
     const result = showModal(
       <DirectoryBrowserModal
         initialPath={startPath}
-        onSelect={(path) => setBaseDir(path)}
+        onSelect={(path) => saveBaseDir(path)}
         onClose={() => result.Close()}
       />,
       undefined,

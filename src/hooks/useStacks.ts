@@ -26,7 +26,7 @@ export interface UseStacksResult {
   setSelectedService: (name: string) => void;
   statusDetail: StackStatusDetail | null;
   pendingAction: string | null;
-  saveBaseDir: () => Promise<void>;
+  saveBaseDir: (dir?: string) => Promise<void>;
   runAction: (action: string) => Promise<void>;
 }
 
@@ -100,13 +100,17 @@ export function useStacks(): UseStacksResult {
     }
   };
 
-  const saveBaseDir = async () => {
+  const saveBaseDir = async (dir?: string) => {
+    const path = dir ?? baseDir;
     setPendingAction("Saving");
     try {
-      const result = await setBaseDirBackend(baseDir);
+      const result = await setBaseDirBackend(path);
       if (result.success) {
+        if (dir && dir !== baseDir) {
+          setBaseDir(dir);
+        }
         await doScan();
-        toaster.toast({ title: "Settings saved", body: baseDir });
+        toaster.toast({ title: "Settings saved", body: path });
       } else {
         toaster.toast({ title: "Settings error", body: result.message || "Unknown error" });
       }
