@@ -74,9 +74,13 @@ Override files (e.g. `container-compose.override.yml`) are merged automatically 
 
 ## Status colors
 
-- **Green** — `running`, `healthy`, or all services completed successfully
-- **Yellow** — `partial`, `unhealthy`, `created`, containers still `starting`
-- **Red** — `stopped`, `failed`, or `unknown`
+Each service shows a colored dot based on its current state and health check:
+
+- **Green** — `running`, `healthy`, or `completed`
+- **Yellow / Orange** — `created`, `starting`, or `partial`
+- **Red** — `stopped`, `failed`, `unhealthy`, or `unknown`
+
+Health checks take precedence over state. For example, a container whose state is `running` but whose health check reports `unhealthy` will show red; a container with health `starting` will show orange.
 
 ## License
 
