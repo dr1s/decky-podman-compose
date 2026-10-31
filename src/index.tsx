@@ -6,11 +6,12 @@ import {
   routerHook,
 } from "@decky/api";
 import { SiPodman } from "react-icons/si";
+import { LOGS_ROUTE } from "./constants";
 import { Content } from "./components/Content";
 import { LogPage } from "./components/LogPage";
 
 export default definePlugin(() => {
-  routerHook.addRoute("/decky/podman-compose/logs", () => <LogPage />, { exact: true });
+  routerHook.addRoute(LOGS_ROUTE, () => <LogPage />, { exact: true });
 
   return {
     name: "Podman Compose",
@@ -18,7 +19,7 @@ export default definePlugin(() => {
     content: <Content />,
     icon: <SiPodman />,
     onDismount: () => {
-      routerHook.removeRoute("/decky/podman-compose/logs");
+      routerHook.removeRoute(LOGS_ROUTE);
     },
   };
 });

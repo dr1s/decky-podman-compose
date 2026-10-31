@@ -1,5 +1,5 @@
 import { DialogButton, Navigation, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
-import { ALL_SERVICES } from "../constants";
+import { ALL_SERVICES, LOGS_ROUTE } from "../constants";
 import { useStacks } from "../hooks/useStacks";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -49,7 +49,7 @@ export function Content() {
     if (selectedStack === undefined) return;
     const svcs = selectedService === ALL_SERVICES ? [] : [selectedService];
     const servicesParam = svcs.length > 0 ? `?services=${encodeURIComponent(svcs.join(","))}` : "";
-    Navigation.Navigate(`/decky/podman-compose/logs?stack=${encodeURIComponent(selectedStack)}${servicesParam}`);
+    Navigation.Navigate(`${LOGS_ROUTE}?stack=${encodeURIComponent(selectedStack)}${servicesParam}`);
     Navigation.CloseSideMenus();
   };
 
