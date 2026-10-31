@@ -6,7 +6,7 @@ import {
   PanelSectionRow,
 } from "@decky/ui";
 import { toaster } from "@decky/api";
-import { useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { getLogLines, startLogStream, stopLogStream } from "../api";
 import { LOG_POLL_INTERVAL_MS } from "../constants";
 
@@ -16,6 +16,35 @@ function useLogParams() {
   const servicesParam = params.get("services");
   const services = servicesParam ? servicesParam.split(",").filter(Boolean) : [];
   return { stackName, services };
+}
+
+function LogPageShell({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div
+      style={{
+        width: "100vw",
+        height: "100vh",
+        padding: "16px 0",
+        boxSizing: "border-box",
+        pointerEvents: "auto",
+      }}
+      onClick={(e) => e.stopPropagation()}
+      onWheel={(e) => e.stopPropagation()}
+    >
+      <div style={{ margin: "0 -20px", width: "calc(100% + 40px)" }}>
+        <PanelSection title={title}>
+          {children}
+          <PanelSectionRow>
+            <div style={{ marginBottom: "60px" }}>
+              <ButtonItem layout="below" onClick={() => Navigation.NavigateBack()}>
+                Close
+              </ButtonItem>
+            </div>
+          </PanelSectionRow>
+        </PanelSection>
+      </div>
+    </div>
+  );
 }
 
 export function LogPage() {
@@ -61,50 +90,37 @@ export function LogPage() {
     }
   }, [logs]);
 
+  if (!stackName) {
+    return (
+      <LogPageShell title="Logs">
+        <PanelSectionRow>
+          <div style={{ padding: "8px" }}>No stack selected.</div>
+        </PanelSectionRow>
+      </LogPageShell>
+    );
+  }
+
   return (
-      <div
-        style={{
-          width: "100vw",
-          height: "100vh",
-          padding: "16px 0",
-          boxSizing: "border-box",
-          pointerEvents: "auto",
-        }}
-        onClick={(e) => e.stopPropagation()}
-        onWheel={(e) => e.stopPropagation()}
-      >
-        <div style={{ margin: "0 -20px", width: "calc(100% + 40px)" }}>
-          <PanelSection title={stackName ? `Logs: ${stackName}` : "Logs"}>
-          <PanelSectionRow>
-            <Focusable
-              ref={logRef}
-              style={{
-                backgroundColor: "#1a1a1a",
-                color: "#d4d4d4",
-                fontFamily: "monospace",
-                fontSize: "12px",
-                height: "calc(100vh - 200px)",
-                overflow: "auto",
-                padding: "8px",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-                pointerEvents: "auto",
-              }}
-              onClick={(e) => e.stopPropagation()}
-              onWheel={(e) => e.stopPropagation()}
-            >
-              {logs.length === 0 ? "// waiting for logs..." : logs.join("\n")}
-            </Focusable>
-          </PanelSectionRow>
-          <PanelSectionRow>
-            <div style={{ marginBottom: "60px" }}>
-              <ButtonItem layout="below" onClick={() => Navigation.NavigateBack()}>
-                Close
-              </ButtonItem>
-            </div>
-          </PanelSectionRow>
-        </PanelSection>
-        </div>
-      </div>
+    <LogPageShell title={`Logs: ${stackName}`}>
+      <PanelSectionRow>
+        <Focusable
+          ref={logRef}
+          style={{
+            backgroundColor: "#1a1a1a",
+            color: "#d4d4d4",
+            fontFamily: "monospace",
+            fontSize: "12px",
+            height: "calc(100vh - 200px)",
+            overflow: "auto",
+            padding: "8px",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            pointerEvents: "auto",
+          }}
+        >
+          {logs.length === 0 ? "// waiting for logs..." : logs.join("\n")}
+        </Focusable>
+      </PanelSectionRow>
+    </LogPageShell>
   );
 }
