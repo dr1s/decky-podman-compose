@@ -9,14 +9,7 @@ import { toaster } from "@decky/api";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { getLogLines, startLogStream, stopLogStream } from "../api";
 import { LOG_POLL_INTERVAL_MS } from "../constants";
-
-function useLogParams() {
-  const params = new URLSearchParams(window.location.search);
-  const stackName = params.get("stack") || "";
-  const servicesParam = params.get("services");
-  const services = servicesParam ? servicesParam.split(",").filter(Boolean) : [];
-  return { stackName, services };
-}
+import { useLogParams } from "../hooks/useLogParams";
 
 function LogPageShell({ title, children }: { title: string; children: ReactNode }) {
   return (

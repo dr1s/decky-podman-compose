@@ -20,6 +20,7 @@ test:
 	else \
 		python3 -m pytest tests/ -v; \
 	fi
+	npm run test:frontend
 
 clean:
 	rm -rf $(DIST_DIR)
