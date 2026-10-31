@@ -2,7 +2,6 @@ import { DialogButton, Navigation, PanelSection, PanelSectionRow, showModal } fr
 import { ALL_SERVICES, LOGS_ROUTE } from "../constants";
 import { useStacks } from "../hooks/useStacks";
 
-declare const process: { env: Record<string, string | undefined> };
 import { ActionsPanel } from "./ActionsPanel";
 import { DirectoryBrowserModal } from "./DirectoryBrowserModal";
 import { Divider } from "./Divider";
@@ -28,7 +27,7 @@ export function Content() {
   } = useStacks();
 
   const handleBrowseBaseDir = () => {
-    const home = process.env.HOME || "/home/deck";
+    const home = (globalThis as any).process?.env?.HOME || "/home/deck";
     const startPath = baseDir.startsWith("~") ? baseDir.replace("~", home) : baseDir;
     const result = showModal(
       <DirectoryBrowserModal
