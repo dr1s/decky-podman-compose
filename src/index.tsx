@@ -11,7 +11,7 @@ import { Content } from "./components/Content";
 import { LogPage } from "./components/LogPage";
 
 export default definePlugin(() => {
-  routerHook.addRoute(LOGS_ROUTE, () => <LogPage />, { exact: true });
+  routerHook.addRoute(LOGS_ROUTE, (props: any) => <LogPage {...props} />, { exact: true });
 
   return {
     name: "Podman Compose",

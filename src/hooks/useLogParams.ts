@@ -1,5 +1,5 @@
-export function useLogParams() {
-  const params = new URLSearchParams(window.location.search);
+export function useLogParams(search?: string) {
+  const params = new URLSearchParams(search ?? window.location.search);
   const stackName = params.get("stack") || "";
   const servicesParam = params.get("services");
   const services = servicesParam ? servicesParam.split(",").filter(Boolean) : [];

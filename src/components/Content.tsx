@@ -47,7 +47,7 @@ export function Content() {
   const openLogs = () => {
     if (selectedStack === undefined) return;
     const svcs = selectedService === ALL_SERVICES ? [] : [selectedService];
-    const servicesParam = svcs.length > 0 ? `?services=${encodeURIComponent(svcs.join(","))}` : "";
+    const servicesParam = svcs.length > 0 ? `&services=${encodeURIComponent(svcs.join(","))}` : "";
     Navigation.Navigate(`${LOGS_ROUTE}?stack=${encodeURIComponent(selectedStack)}${servicesParam}`);
     Navigation.CloseSideMenus();
   };

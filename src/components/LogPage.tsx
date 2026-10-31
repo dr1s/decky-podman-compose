@@ -40,8 +40,8 @@ function LogPageShell({ title, children }: { title: string; children: ReactNode 
   );
 }
 
-export function LogPage() {
-  const { stackName, services } = useLogParams();
+export function LogPage({ location }: { location?: { search?: string } }) {
+  const { stackName, services } = useLogParams(location?.search);
   const [logs, setLogs] = useState<string[]>([]);
   const logIndexRef = useRef<number>(0);
   const logRef = useRef<HTMLDivElement>(null);

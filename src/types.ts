@@ -6,7 +6,7 @@ export interface Stack {
 export interface ServiceStatus {
   name: string;
   state: string;
-  health: string;
+  health?: string;
 }
 
 export interface StackStatusDetail {
