@@ -10,6 +10,7 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { getLogLines, startLogStream, stopLogStream } from "../api";
 import { LOG_POLL_INTERVAL_MS } from "../constants";
 import { useLogParams } from "../hooks/useLogParams";
+import type { RouteComponentProps } from "../types";
 
 function LogPageShell({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -40,8 +41,8 @@ function LogPageShell({ title, children }: { title: string; children: ReactNode 
   );
 }
 
-export function LogPage({ location }: { location?: { search?: string } }) {
-  const { stackName, services } = useLogParams(location?.search);
+export function LogPage({ location }: RouteComponentProps) {
+  const { stackName, services } = useLogParams(location.search);
   const [logs, setLogs] = useState<string[]>([]);
   const logIndexRef = useRef<number>(0);
   const logRef = useRef<HTMLDivElement>(null);
