@@ -25,6 +25,39 @@ def _get_settings_dir() -> str:
     return os.path.expanduser("~/.config/decky-podman-compose")
 
 
+def _merge_shell_env(shell_env: dict[str, str]) -> None:
+    """Merge login-shell environment without overwriting Decky's own values.
+
+    PATH entries from the shell are appended when they are not already present;
+    all other variables are only added if they are missing from the current
+    environment.
+    """
+    protected = {
+        "DECKY_PLUGIN_DIR",
+        "DECKY_PLUGIN_NAME",
+        "DECKY_PLUGIN_VERSION",
+        "DECKY_HOME",
+        "DECKY_USER_HOME",
+        "DECKY_SETTINGS_DIR",
+        "XDG_RUNTIME_DIR",
+        "DBUS_SESSION_BUS_ADDRESS",
+        "LD_LIBRARY_PATH",
+        "LD_PRELOAD",
+    }
+    for key, value in shell_env.items():
+        if key in protected:
+            continue
+        if key == "PATH":
+            current = os.environ.get("PATH", "")
+            current_parts = current.split(os.pathsep)
+            extra = [p for p in value.split(os.pathsep) if p and p not in current_parts]
+            if extra:
+                os.environ["PATH"] = current + os.pathsep + os.pathsep.join(extra)
+            continue
+        if key not in os.environ:
+            os.environ[key] = value
+
+
 class Plugin:
     async def _main(self):
         settings_dir = _get_settings_dir()
@@ -39,13 +72,13 @@ class Plugin:
             )
             stdout, _stderr = await proc.communicate()
             env_text = stdout.decode("utf-8", errors="replace").strip("\x00")
+            shell_env = {}
             for line in env_text.split("\x00"):
                 if "=" in line:
                     key, value = line.split("=", 1)
-                    # Preserve Decky's own env vars to avoid breaking the loader.
-                    if key not in ("DECKY_PLUGIN_DIR", "DECKY_PLUGIN_NAME", "DECKY_PLUGIN_VERSION"):
-                        os.environ[key] = value
-            decky.logger.info("Podman Compose: loaded login shell environment")
+                    shell_env[key] = value
+            _merge_shell_env(shell_env)
+            decky.logger.info("Podman Compose: merged login shell environment")
         except Exception as e:
             decky.logger.warning(f"Podman Compose: failed to load login environment: {e}")
 

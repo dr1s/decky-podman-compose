@@ -1,8 +1,8 @@
 import asyncio
+import os
 import pytest
 import tempfile
-import os
-from main import Plugin
+from main import Plugin, _merge_shell_env
 
 
 @pytest.mark.asyncio
@@ -41,3 +41,24 @@ async def test_scan_stacks_via_plugin():
         stacks = await p.scan_stacks()
         assert any(s["name"] == "svc" for s in stacks)
         await p._unload()
+
+
+def test_merge_shell_env_appends_missing_path_entries(monkeypatch):
+    monkeypatch.setenv("PATH", "/decky/bin")
+    _merge_shell_env({"PATH": "/usr/local/bin:/usr/bin"})
+    paths = os.environ["PATH"].split(os.pathsep)
+    assert "/decky/bin" in paths
+    assert "/usr/local/bin" in paths
+    assert "/usr/bin" in paths
+
+
+def test_merge_shell_env_adds_missing_vars(monkeypatch):
+    monkeypatch.delenv("TEST_PODMAN_VAR", raising=False)
+    _merge_shell_env({"TEST_PODMAN_VAR": "value"})
+    assert os.environ["TEST_PODMAN_VAR"] == "value"
+
+
+def test_merge_shell_env_preserves_decky_vars(monkeypatch):
+    monkeypatch.setenv("DECKY_PLUGIN_DIR", "/original")
+    _merge_shell_env({"DECKY_PLUGIN_DIR": "/shell"})
+    assert os.environ["DECKY_PLUGIN_DIR"] == "/original"
