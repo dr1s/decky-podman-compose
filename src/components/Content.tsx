@@ -1,4 +1,5 @@
 import { DialogButton, Navigation, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
+import { getHomeDir } from "../api";
 import { ALL_SERVICES, LOGS_ROUTE, STATS_ROUTE } from "../constants";
 import { useStacks } from "../hooks/useStacks";
 
@@ -26,9 +27,9 @@ export function Content() {
     runAction,
   } = useStacks();
 
-  const handleBrowseBaseDir = () => {
-    const home = (globalThis as any).process?.env?.HOME || "/home/deck";
-    const startPath = baseDir.startsWith("~") ? baseDir.replace(/^~/, home) : baseDir;
+  const handleBrowseBaseDir = async () => {
+    const home = await getHomeDir();
+    const startPath = baseDir.startsWith("~") ? baseDir.replace(/^~/, home || "/home/deck") : baseDir;
     const result = showModal(
       <DirectoryBrowserModal
         initialPath={startPath}

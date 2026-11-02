@@ -3,6 +3,7 @@ import { toaster } from "@decky/api";
 import {
   composeAction,
   getBaseDir,
+  getHomeDir,
   getSelectedService,
   getSelectedStack,
   getServices,
@@ -39,8 +40,7 @@ export function useStacks(): UseStacksResult {
   const [selectedService, setSelectedServiceState] = useState<string>(ALL_SERVICES);
   const [statusDetail, setStatusDetail] = useState<StackStatusDetail | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
-
-  const home = (globalThis as any).process?.env?.HOME ?? "";
+  const [home, setHome] = useState<string>("");
 
   const setSelectedStack = (name: string) => {
     setSelectedStackState(name);
@@ -54,8 +54,9 @@ export function useStacks(): UseStacksResult {
 
   const loadBaseDir = async () => {
     try {
-      const dir = await getBaseDir();
-      setBaseDir(collapseHome(dir, home));
+      const [dir, homeDir] = await Promise.all([getBaseDir(), getHomeDir()]);
+      setHome(homeDir);
+      setBaseDir(collapseHome(dir, homeDir));
     } catch (e) {
       console.error("Failed to load base dir", e);
     }
@@ -109,8 +110,9 @@ export function useStacks(): UseStacksResult {
     try {
       const result = await setBaseDirBackend(path);
       if (result.success) {
-        const saved = await getBaseDir();
-        setBaseDir(collapseHome(saved, home));
+        const [saved, homeDir] = await Promise.all([getBaseDir(), getHomeDir()]);
+        setHome(homeDir);
+        setBaseDir(collapseHome(saved, homeDir));
         await doScan();
         toaster.toast({ title: "Settings saved", body: collapseHome(saved, home) });
       } else {

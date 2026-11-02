@@ -152,6 +152,13 @@ class Plugin:
             decky.logger.error(f"Podman Compose: get_base_dir exception: {e}")
             return ""
 
+    async def get_home_dir(self) -> str:
+        try:
+            return os.environ.get("HOME", os.path.expanduser("~"))
+        except Exception as e:
+            decky.logger.error(f"Podman Compose: get_home_dir exception: {e}")
+            return ""
+
     async def list_directory(self, path: str) -> dict:
         try:
             expanded = os.path.expanduser(path)

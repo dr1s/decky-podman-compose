@@ -3,6 +3,7 @@ import type { Stack, StackStats, StackStatusDetail } from "./types";
 
 export const setBaseDir = callable<[path: string], { success: boolean; message?: string }>("set_base_dir");
 export const getBaseDir = callable<[], string>("get_base_dir");
+export const getHomeDir = callable<[], string>("get_home_dir");
 export const getSelectedStack = callable<[], string>("get_selected_stack");
 export const setSelectedStackBackend = callable<[stackName: string], { success: boolean; message?: string }>("set_selected_stack");
 export const getSelectedService = callable<[], string>("get_selected_service");
