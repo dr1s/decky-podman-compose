@@ -326,6 +326,51 @@ def test_get_status_detail_falls_back_to_podman_compose_label():
         assert detail["services"][0]["state"] == "running"
 
 
+def test_get_container_stats_maps_stats_to_services():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "stack1"))
+        open(os.path.join(base, "stack1", "container-compose.yml"), "w").close()
+        mgr = _setup_manager(base)
+        mgr.scan_stacks()
+
+        async def fake_services(stack_name):
+            return ["web"]
+
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
+            import json as _json
+            if "ps" in cmd:
+                ps = [
+                    {
+                        "Names": ["stack1_web_1"],
+                        "Labels": {"com.docker.compose.service": "web"},
+                        "State": "running",
+                    }
+                ]
+                return (0, _json.dumps(ps), "")
+            if "stats" in cmd:
+                stats = [
+                    {
+                        "Name": "stack1_web_1",
+                        "CPU": "5.00%",
+                        "MemUsage": "10MB / 100MB",
+                        "Mem": "10.00%",
+                        "NetIO": "1kB / 2kB",
+                        "BlockIO": "3kB / 4kB",
+                        "PIDs": "12",
+                    }
+                ]
+                return (0, _json.dumps(stats), "")
+            return (0, "", "")
+
+        mgr.get_services = fake_services
+        mgr._run = fake_run
+        result = asyncio.run(mgr.get_container_stats("stack1"))
+        web = result["services"][0]
+        assert web["name"] == "web"
+        assert web["cpu"] == "5.00%"
+        assert web["mem_percent"] == "10.00%"
+
+
 def test_run_action_stores_full_output():
     with tempfile.TemporaryDirectory() as base:
         os.makedirs(os.path.join(base, "stack1"))

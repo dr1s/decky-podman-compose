@@ -1,5 +1,5 @@
 import { DialogButton, Navigation, PanelSection, PanelSectionRow, showModal } from "@decky/ui";
-import { ALL_SERVICES, LOGS_ROUTE } from "../constants";
+import { ALL_SERVICES, LOGS_ROUTE, STATS_ROUTE } from "../constants";
 import { useStacks } from "../hooks/useStacks";
 
 import { ActionsPanel } from "./ActionsPanel";
@@ -52,6 +52,12 @@ export function Content() {
     Navigation.CloseSideMenus();
   };
 
+  const openStats = () => {
+    if (selectedStack === undefined) return;
+    Navigation.Navigate(`${STATS_ROUTE}?stack=${encodeURIComponent(selectedStack)}`);
+    Navigation.CloseSideMenus();
+  };
+
   return (
     <PanelSection>
       {stacks.length === 0 && (
@@ -78,9 +84,14 @@ export function Content() {
           <ActionsPanel pendingAction={pendingAction} onAction={runAction} />
           <Divider />
           <PanelSectionRow>
-            <DialogButton onClick={openLogs} disabled={!selectedStack}>
-              Open logs
-            </DialogButton>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+              <DialogButton onClick={openLogs} disabled={!selectedStack}>
+                Open logs
+              </DialogButton>
+              <DialogButton onClick={openStats} disabled={!selectedStack}>
+                Stats
+              </DialogButton>
+            </div>
           </PanelSectionRow>
         </>
       )}

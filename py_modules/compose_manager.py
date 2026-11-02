@@ -156,6 +156,73 @@ class ComposeManager:
 
         return {"services": service_statuses}
 
+    async def get_container_stats(self, stack_name: str) -> dict:
+        stack = self.get_stack(stack_name)
+        if not stack:
+            return {"services": []}
+
+        services = await self.get_services(stack_name)
+
+        code, stdout, _stderr = await self._run(
+            [*self.compose_base_cmd(), "ps", "--format", "json"],
+            stack["path"],
+        )
+        if code != 0:
+            return {"services": []}
+        try:
+            containers = json.loads(stdout)
+        except json.JSONDecodeError:
+            return {"services": []}
+
+        service_by_name: dict[str, str] = {}
+        for c in containers:
+            state = str(c.get("State", "")).lower()
+            status = str(c.get("Status", "")).lower()
+            is_running = state == "running" or "up " in status or status.startswith("up")
+            if not is_running:
+                continue
+            names = c.get("Names") or [c.get("Name", "")]
+            name = names[0] if names else ""
+            labels = c.get("Labels") or {}
+            svc = labels.get("com.docker.compose.service") or labels.get("io.podman.compose.service")
+            if not svc:
+                parts = name.split("_")
+                if len(parts) >= 2:
+                    svc = parts[-2]
+            if name and svc:
+                service_by_name[name] = svc
+
+        code, stdout, _stderr = await self._run(
+            ["podman", "stats", "--no-stream", "--format", "json"],
+            stack["path"],
+        )
+        if code != 0:
+            return {"services": []}
+        try:
+            stats = json.loads(stdout)
+        except json.JSONDecodeError:
+            return {"services": []}
+
+        if isinstance(stats, dict):
+            stats = [stats]
+
+        stats_by_service: dict[str, dict] = {}
+        for s in stats:
+            name = s.get("Name") or s.get("name", "")
+            svc = service_by_name.get(name)
+            if not svc:
+                continue
+            stats_by_service[svc] = {
+                "cpu": s.get("CPU") or s.get("cpu_percent") or "0%",
+                "mem_usage": s.get("MemUsage") or s.get("mem_usage") or "",
+                "mem_percent": s.get("Mem") or s.get("mem_percent") or "0%",
+                "net_io": s.get("NetIO") or s.get("net_io") or "",
+                "block_io": s.get("BlockIO") or s.get("block_io") or "",
+                "pids": s.get("PIDs") or s.get("pids") or "",
+            }
+
+        return {"services": [{"name": svc, **stats_by_service[svc]} for svc in services if svc in stats_by_service]}
+
     async def run_action(self, stack_name: str, action: str, services: Optional[list[str]] = None) -> dict:
         stack = self.get_stack(stack_name)
         if not stack:

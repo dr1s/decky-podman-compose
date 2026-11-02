@@ -221,6 +221,13 @@ class Plugin:
             decky.logger.error(f"Podman Compose: get_stack_status_detail exception: {e}")
             return {"services": []}
 
+    async def get_stack_stats(self, stack_name: str) -> dict:
+        try:
+            return await self.compose.get_container_stats(stack_name)
+        except Exception as e:
+            decky.logger.error(f"Podman Compose: get_stack_stats exception: {e}")
+            return {"services": []}
+
     async def compose_action(self, stack_name: str, action: str, services: list = None) -> dict:
         try:
             return await self.compose.run_action(stack_name, action, services)

@@ -18,6 +18,7 @@ This plugin is maintained primarily for personal use.
 - Select a stack and optionally a single service
 - Up / Down / Start / Stop / Pull whole stacks or individual services
 - Live, scrollable logs with per-service tabs and an Action output tab
+- Live container stats page showing CPU, memory, network, and block I/O usage
 - Status indicator with color-coded health (green / yellow / red)
 - Handles one-shot init containers that exit cleanly without showing the stack as partial
 
@@ -81,6 +82,20 @@ Open the logs page for a stack to view:
 - **Action** — the live stdout/stderr of the most recent `up`, `down`, `start`, `stop`, or `pull` command for that stack
 
 The Action tab updates while the command is running, so you can follow a long `pull` or `up` without leaving the plugin.
+
+## Stats
+
+The **Stats** button opens a full-screen stats page for the selected stack. It polls `podman stats` every second and shows a spreadsheet of running containers with:
+
+- Name
+- CPU usage and a small sparkline graph
+- Memory percentage and a small sparkline graph
+- Memory usage
+- Network I/O
+- Block I/O
+- Process count
+
+Only currently running containers are shown; stopped or one-shot containers are excluded.
 
 ## Status colors
 

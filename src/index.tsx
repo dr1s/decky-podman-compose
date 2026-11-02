@@ -7,15 +7,21 @@ import {
   routerHook,
 } from "@decky/api";
 import { SiPodman } from "react-icons/si";
-import { LOGS_ROUTE } from "./constants";
+import { LOGS_ROUTE, STATS_ROUTE } from "./constants";
 import type { RouteComponentProps } from "./types";
 import { Content } from "./components/Content";
 import { LogPage } from "./components/LogPage";
+import { StatsPage } from "./components/StatsPage";
 
 export default definePlugin(() => {
   routerHook.addRoute(
     LOGS_ROUTE,
     ((props: RouteComponentProps) => <LogPage {...props} />) as ComponentType,
+    { exact: true },
+  );
+  routerHook.addRoute(
+    STATS_ROUTE,
+    ((props: RouteComponentProps) => <StatsPage {...props} />) as ComponentType,
     { exact: true },
   );
 
@@ -26,6 +32,7 @@ export default definePlugin(() => {
     icon: <SiPodman />,
     onDismount: () => {
       routerHook.removeRoute(LOGS_ROUTE);
+      routerHook.removeRoute(STATS_ROUTE);
     },
   };
 });

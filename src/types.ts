@@ -13,6 +13,20 @@ export interface StackStatusDetail {
   services: ServiceStatus[];
 }
 
+export interface ContainerStats {
+  name: string;
+  cpu?: string;
+  mem_usage?: string;
+  mem_percent?: string;
+  net_io?: string;
+  block_io?: string;
+  pids?: string;
+}
+
+export interface StackStats {
+  services: ContainerStats[];
+}
+
 export interface RouteComponentProps {
   location: {
     search: string;
