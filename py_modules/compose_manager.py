@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import shlex
+import shutil
 from typing import Optional
 
 import decky
@@ -71,7 +72,8 @@ class ComposeManager:
         if override:
             return [override]
         bundled = os.path.join(os.path.dirname(__file__), "vendor", "podman_compose.py")
-        return ["/usr/bin/python3", bundled]
+        python = shutil.which("python3") or "/usr/bin/python3"
+        return [python, bundled]
 
     async def get_services(self, stack_name: str) -> list[str]:
         if stack_name in self._services_cache:

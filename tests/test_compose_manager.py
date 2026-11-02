@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shutil
 import tempfile
 from unittest.mock import MagicMock
 
@@ -18,7 +19,7 @@ def _setup_manager(base):
 
 def _expected_base_cmd():
     return [
-        "/usr/bin/python3",
+        shutil.which("python3") or "/usr/bin/python3",
         os.path.join(os.path.dirname(compose_manager_module.__file__), "vendor", "podman_compose.py"),
     ]
 
