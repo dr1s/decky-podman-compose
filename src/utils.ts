@@ -1,5 +1,14 @@
 import type { ServiceStatus } from "./types";
 
+export function collapseHome(path: string, home?: string): string {
+  if (!home) return path;
+  if (path === home) return "~";
+  if (path.startsWith(home + "/")) {
+    return "~" + path.slice(home.length);
+  }
+  return path;
+}
+
 export function statusColor(status: string, health?: string): string {
   const h = health?.toLowerCase();
   if (h === "healthy") return "#4caf50";

@@ -14,6 +14,7 @@ import {
 } from "../api";
 import { ALL_SERVICES, STATUS_REFRESH_INTERVAL_MS } from "../constants";
 import type { Stack, StackStatusDetail } from "../types";
+import { collapseHome } from "../utils";
 
 export interface UseStacksResult {
   baseDir: string;
@@ -39,6 +40,8 @@ export function useStacks(): UseStacksResult {
   const [statusDetail, setStatusDetail] = useState<StackStatusDetail | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
+  const home = (globalThis as any).process?.env?.HOME ?? "";
+
   const setSelectedStack = (name: string) => {
     setSelectedStackState(name);
     setSelectedStackBackend(name);
@@ -52,7 +55,7 @@ export function useStacks(): UseStacksResult {
   const loadBaseDir = async () => {
     try {
       const dir = await getBaseDir();
-      setBaseDir(dir);
+      setBaseDir(collapseHome(dir, home));
     } catch (e) {
       console.error("Failed to load base dir", e);
     }
@@ -106,11 +109,10 @@ export function useStacks(): UseStacksResult {
     try {
       const result = await setBaseDirBackend(path);
       if (result.success) {
-        if (dir && dir !== baseDir) {
-          setBaseDir(dir);
-        }
+        const saved = await getBaseDir();
+        setBaseDir(collapseHome(saved, home));
         await doScan();
-        toaster.toast({ title: "Settings saved", body: path });
+        toaster.toast({ title: "Settings saved", body: collapseHome(saved, home) });
       } else {
         toaster.toast({ title: "Settings error", body: result.message || "Unknown error" });
       }

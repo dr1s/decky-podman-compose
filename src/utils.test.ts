@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { serviceStatusText, statusColor } from "./utils";
+import { collapseHome, serviceStatusText, statusColor } from "./utils";
 
 describe("statusColor", () => {
   it("returns green for healthy health", () => {
@@ -30,6 +30,24 @@ describe("statusColor", () => {
     expect(statusColor("stopped")).toBe("#f44336");
     expect(statusColor("failed")).toBe("#f44336");
     expect(statusColor("unknown")).toBe("#f44336");
+  });
+});
+
+describe("collapseHome", () => {
+  it("replaces the home directory with ~", () => {
+    expect(collapseHome("/home/deck/podman", "/home/deck")).toBe("~/podman");
+  });
+
+  it("returns ~ when the path equals the home directory", () => {
+    expect(collapseHome("/home/deck", "/home/deck")).toBe("~");
+  });
+
+  it("does not replace partial home matches", () => {
+    expect(collapseHome("/home/deckerson/podman", "/home/deck")).toBe("/home/deckerson/podman");
+  });
+
+  it("returns the original path when home is not provided", () => {
+    expect(collapseHome("/home/deck/podman")).toBe("/home/deck/podman");
   });
 });
 
