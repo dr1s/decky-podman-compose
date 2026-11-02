@@ -23,6 +23,7 @@ class ComposeManager:
         self._settings = settings_store
         self._stacks: dict[str, dict] = {}
         self._services_cache: dict[str, list[str]] = {}
+        self._action_output: dict[str, list[str]] = {}
 
     def scan_stacks(self) -> list[dict]:
         base_dir = self._settings.get_base_dir()
@@ -187,7 +188,9 @@ class ComposeManager:
             f"PODMAN_COMPOSE_PROVIDER={env.get('PODMAN_COMPOSE_PROVIDER', '')} "
             f"HOME={env.get('HOME', '')}"
         )
-        code, stdout, stderr = await self._run(cmd, stack['path'], env, timeout=timeout)
+        output_lines: list[str] = []
+        self._action_output[stack_name] = output_lines
+        code, stdout, stderr = await self._run(cmd, stack['path'], env, timeout=timeout, output_lines=output_lines)
         decky.logger.info(f"Podman Compose: command exit code: {code}")
         if stdout.strip():
             decky.logger.info(f"Podman Compose: stdout: {stdout.strip()}")
@@ -212,7 +215,17 @@ class ComposeManager:
 
         return {"success": True, "message": message}
 
-    async def _run(self, cmd: list[str], cwd: str, env: Optional[dict[str, str]] = None, timeout: int = 120) -> tuple[int, str, str]:
+    def get_last_action_output(self, stack_name: str) -> str:
+        return "\n".join(self._action_output.get(stack_name, []))
+
+    async def _run(
+        self,
+        cmd: list[str],
+        cwd: str,
+        env: Optional[dict[str, str]] = None,
+        timeout: int = 120,
+        output_lines: Optional[list[str]] = None,
+    ) -> tuple[int, str, str]:
         env = clean_subprocess_env(env)
         try:
             # Run via bash -l to mimic an interactive terminal session as closely as
@@ -237,7 +250,10 @@ class ComposeManager:
                     line = await stream.readline()
                     if not line:
                         break
-                    collector.append(line.decode("utf-8", errors="replace"))
+                    text = line.decode("utf-8", errors="replace")
+                    collector.append(text)
+                    if output_lines is not None:
+                        output_lines.append(text.rstrip("\r\n"))
 
             try:
                 await asyncio.wait_for(

@@ -12,12 +12,12 @@ import type { RouteComponentProps } from "./types";
 import { Content } from "./components/Content";
 import { LogPage } from "./components/LogPage";
 
-const LogPageRoute: ComponentType = (props) => (
-  <LogPage {...(props as RouteComponentProps)} />
-);
-
 export default definePlugin(() => {
-  routerHook.addRoute(LOGS_ROUTE, LogPageRoute, { exact: true });
+  routerHook.addRoute(
+    LOGS_ROUTE,
+    ((props: RouteComponentProps) => <LogPage {...props} />) as ComponentType,
+    { exact: true },
+  );
 
   return {
     name: "Podman Compose",

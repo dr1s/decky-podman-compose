@@ -15,3 +15,4 @@ export const composeAction = callable<[stackName: string, action: string, servic
 export const startLogStream = callable<[stackName: string, services?: string[]], { success: boolean; message?: string }>("start_log_stream");
 export const getLogLines = callable<[stackName: string, afterIndex: number], { lines: string[]; next_index: number }>("get_log_lines");
 export const stopLogStream = callable<[stackName: string], void>("stop_log_stream");
+export const getLastActionOutput = callable<[stackName: string], string>("get_last_action_output");

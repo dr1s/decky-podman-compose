@@ -53,7 +53,7 @@ def test_run_action_builds_up_command():
         mgr.scan_stacks()
         captured = {"cmds": []}
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             captured["cmds"].append(cmd)
             captured["cwd"] = cwd
             if cmd[2:5] == ["ps", "-a", "--format"]:
@@ -75,7 +75,7 @@ def test_run_action_builds_down_command_no_services():
         mgr.scan_stacks()
         captured = {}
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             captured["cmd"] = cmd
             captured["cwd"] = cwd
             return (0, "ok", "")
@@ -94,7 +94,7 @@ def test_run_action_builds_down_command_with_services():
         mgr.scan_stacks()
         captured = {}
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             captured["cmd"] = cmd
             captured["cwd"] = cwd
             return (0, "ok", "")
@@ -113,7 +113,7 @@ def test_run_action_builds_pull_command():
         mgr.scan_stacks()
         captured = {}
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             captured["cmd"] = cmd
             captured["cwd"] = cwd
             return (0, "ok", "")
@@ -142,7 +142,7 @@ def test_get_status_detail_returns_service_states():
         async def fake_services(stack_name):
             return ["web", "db"]
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             import json as _json
             ps = [
                 {
@@ -181,7 +181,7 @@ def test_get_services_caches_result_per_stack():
 
         call_count = 0
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             nonlocal call_count
             call_count += 1
             return (0, "web\ndb\n", "")
@@ -203,7 +203,7 @@ def test_scan_stacks_clears_service_cache():
 
         call_count = 0
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             nonlocal call_count
             call_count += 1
             return (0, "web\n", "")
@@ -224,7 +224,7 @@ def test_run_action_uses_action_specific_timeouts():
 
         timeouts = {}
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             action = next((a for a in ("pull", "up", "down", "start", "stop") if a in cmd), cmd[-1])
             timeouts[action] = timeout
             return (0, "ok", "")
@@ -269,7 +269,7 @@ def test_get_status_detail_returns_empty_when_no_services():
         async def fake_services(stack_name):
             return []
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             return (0, "[]", "")
 
         mgr.get_services = fake_services
@@ -288,7 +288,7 @@ def test_get_status_detail_parses_name_when_label_missing():
         async def fake_services(stack_name):
             return ["web"]
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             return (0, '[{"Name": "stack1_web_1", "State": "running", "Status": "Up"}]', "")
 
         mgr.get_services = fake_services
@@ -307,7 +307,7 @@ def test_get_status_detail_falls_back_to_podman_compose_label():
         async def fake_services(stack_name):
             return ["web"]
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             import json as _json
             ps = [
                 {
@@ -326,6 +326,25 @@ def test_get_status_detail_falls_back_to_podman_compose_label():
         assert detail["services"][0]["state"] == "running"
 
 
+def test_run_action_stores_full_output():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "stack1"))
+        open(os.path.join(base, "stack1", "container-compose.yml"), "w").close()
+        mgr = _setup_manager(base)
+        mgr.scan_stacks()
+
+        async def fake_run(cmd, cwd, env=None, timeout=None, output_lines=None, **kwargs):
+            if output_lines is not None:
+                output_lines.append("stdout line")
+                output_lines.append("stderr line")
+            return (0, "stdout line\n", "stderr line\n")
+
+        mgr._run = fake_run
+        result = asyncio.run(mgr.run_action("stack1", "up"))
+        assert result["success"] is True
+        assert mgr.get_last_action_output("stack1") == "stdout line\nstderr line"
+
+
 def test_get_status_detail_returns_empty_on_run_failure():
     with tempfile.TemporaryDirectory() as base:
         os.makedirs(os.path.join(base, "stack1"))
@@ -336,7 +355,7 @@ def test_get_status_detail_returns_empty_on_run_failure():
         async def fake_services(stack_name):
             return ["web"]
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             return (1, "", "error")
 
         mgr.get_services = fake_services
@@ -364,7 +383,7 @@ async def test_run_action_returns_failure_on_nonzero_exit():
         mgr = _setup_manager(base)
         mgr.scan_stacks()
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             return (1, "", "something failed")
 
         mgr._run = fake_run
@@ -381,7 +400,7 @@ async def test_run_handles_compose_provider_error_message():
         mgr = _setup_manager(base)
         mgr.scan_stacks()
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             return (1, "", "looking up compose provider failed")
 
         mgr._run = fake_run
@@ -398,7 +417,7 @@ async def test_run_subprocess_timeout():
         mgr = _setup_manager(base)
         mgr.scan_stacks()
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             return (124, "", "Command timed out")
 
         mgr._run = fake_run
@@ -415,7 +434,7 @@ async def test_run_command_not_found():
         mgr = _setup_manager(base)
         mgr.scan_stacks()
 
-        async def fake_run(cmd, cwd, env=None, timeout=None):
+        async def fake_run(cmd, cwd, env=None, timeout=None, **kwargs):
             return (1, "", "Command not found: /usr/bin/python3")
 
         mgr._run = fake_run

@@ -252,3 +252,10 @@ class Plugin:
             await self.logs.stop(stack_name)
         except Exception as e:
             decky.logger.error(f"Podman Compose: stop_log_stream exception: {e}")
+
+    async def get_last_action_output(self, stack_name: str) -> str:
+        try:
+            return self.compose.get_last_action_output(stack_name)
+        except Exception as e:
+            decky.logger.error(f"Podman Compose: get_last_action_output exception: {e}")
+            return ""

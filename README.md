@@ -17,7 +17,7 @@ This plugin is maintained primarily for personal use.
 - Inline directory browser for picking the base directory
 - Select a stack and optionally a single service
 - Up / Down / Start / Stop / Pull whole stacks or individual services
-- Live, scrollable logs with service-name prefixes
+- Live, scrollable logs with per-service tabs and an Action output tab
 - Status indicator with color-coded health (green / yellow / red)
 - Handles one-shot init containers that exit cleanly without showing the stack as partial
 
@@ -71,6 +71,16 @@ Override files (e.g. `container-compose.override.yml`) are merged automatically 
 > ```
 >
 > The plugin reads the login shell environment at startup, so `.bashrc` is not sourced.
+
+## Logs and Action output
+
+Open the logs page for a stack to view:
+
+- **All** — combined logs from every service in the stack
+- One tab per service — logs for just that service
+- **Action** — the live stdout/stderr of the most recent `up`, `down`, `start`, `stop`, or `pull` command for that stack
+
+The Action tab updates while the command is running, so you can follow a long `pull` or `up` without leaving the plugin.
 
 ## Status colors
 
