@@ -110,7 +110,7 @@ class ComposeManager:
         container_by_service: dict[str, dict] = {}
         for c in containers:
             labels = c.get("Labels") or {}
-            svc = labels.get("com.docker.compose.service")
+            svc = labels.get("com.docker.compose.service") or labels.get("io.podman.compose.service")
             if not svc:
                 name = c.get("Name", "")
                 parts = name.split("_")

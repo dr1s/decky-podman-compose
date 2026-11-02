@@ -152,6 +152,35 @@ async def test_start_returns_failure_when_no_containers():
 
 
 @pytest.mark.asyncio
+async def test_start_parses_ndjson_ps_output():
+    streamer = LogStreamer()
+
+    class FakeProc:
+        def __init__(self, returncode=0, stdout=b"", stderr=b""):
+            self.returncode = returncode
+            self._stdout = stdout
+            self._stderr = stderr
+
+        async def communicate(self):
+            return self._stdout, self._stderr
+
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
+        ps_stdout = (
+            b'{"Names": ["stack_web_1"], "Labels": {"com.docker.compose.service": "web"}}\n'
+            b'{"Names": ["stack_db_1"], "Labels": {"com.docker.compose.service": "db"}}\n'
+        )
+        mock_exec.return_value = FakeProc(returncode=0, stdout=ps_stdout)
+        result = await streamer.start("s1", "/tmp/stack", ["web"], ["/usr/bin/python3", "/tmp/podman_compose.py"])
+
+    assert result["success"] is True
+    # Second subprocess call is the podman logs command for the selected container.
+    logs_call = mock_exec.call_args_list[1]
+    shell_cmd = logs_call.args[2]
+    assert "stack_web_1" in shell_cmd
+    assert "stack_db_1" not in shell_cmd
+
+
+@pytest.mark.asyncio
 async def test_stop_clears_buffer_and_terminates_proc():
     streamer = LogStreamer()
     streamer._ensure_buffer("s1")

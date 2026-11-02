@@ -296,6 +296,35 @@ def test_get_status_detail_parses_name_when_label_missing():
         assert detail["services"][0]["name"] == "web"
 
 
+def test_get_status_detail_falls_back_to_podman_compose_label():
+    with tempfile.TemporaryDirectory() as base:
+        os.makedirs(os.path.join(base, "stack1"))
+        open(os.path.join(base, "stack1", "docker-compose.yml"), "w").close()
+        mgr = _setup_manager(base)
+        mgr.scan_stacks()
+
+        async def fake_services(stack_name):
+            return ["web"]
+
+        async def fake_run(cmd, cwd, env=None, timeout=None):
+            import json as _json
+            ps = [
+                {
+                    "Name": "stack1_web_1",
+                    "State": "running",
+                    "Status": "Up",
+                    "Labels": {"io.podman.compose.service": "web"},
+                },
+            ]
+            return (0, _json.dumps(ps), "")
+
+        mgr.get_services = fake_services
+        mgr._run = fake_run
+        detail = asyncio.run(mgr.get_status_detail("stack1"))
+        assert detail["services"][0]["name"] == "web"
+        assert detail["services"][0]["state"] == "running"
+
+
 def test_get_status_detail_returns_empty_on_run_failure():
     with tempfile.TemporaryDirectory() as base:
         os.makedirs(os.path.join(base, "stack1"))

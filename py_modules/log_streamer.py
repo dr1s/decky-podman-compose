@@ -76,7 +76,19 @@ class LogStreamer:
             names = []
             if ps_proc.returncode == 0 and ps_out.strip():
                 try:
-                    containers = json.loads(ps_out)
+                    data = json.loads(ps_out)
+                    containers = data if isinstance(data, list) else [data]
+                except json.JSONDecodeError:
+                    containers = []
+                    for line in ps_out.splitlines():
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            containers.append(json.loads(line))
+                        except Exception:
+                            pass
+                try:
                     decky.logger.info(f"Podman Compose: parsed {len(containers)} containers")
                     for c in containers:
                         if not c.get("Names"):

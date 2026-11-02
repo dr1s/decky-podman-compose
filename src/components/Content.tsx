@@ -28,7 +28,7 @@ export function Content() {
 
   const handleBrowseBaseDir = () => {
     const home = (globalThis as any).process?.env?.HOME || "/home/deck";
-    const startPath = baseDir.startsWith("~") ? baseDir.replace("~", home) : baseDir;
+    const startPath = baseDir.startsWith("~") ? baseDir.replace(/^~/, home) : baseDir;
     const result = showModal(
       <DirectoryBrowserModal
         initialPath={startPath}
