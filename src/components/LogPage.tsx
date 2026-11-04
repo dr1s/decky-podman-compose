@@ -15,7 +15,7 @@ import {
   stopLogStream,
 } from "../api";
 import { ACTION_TAB, ALL_SERVICES, LOG_POLL_INTERVAL_MS } from "../constants";
-import { useLogParams } from "../hooks/useLogParams";
+import { pendingLogState } from "../routeState";
 
 function LogPageShell({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -47,7 +47,11 @@ function LogPageShell({ title, children }: { title: string; children: ReactNode 
 }
 
 export function LogPage({ location }: { location?: { search?: string } }) {
-  const { stackName, services: initialServices } = useLogParams(location?.search);
+  const params = new URLSearchParams(location?.search ?? window.location.search);
+  const stackName = pendingLogState.stackName || params.get("stack") || "";
+  const initialServices = pendingLogState.services.length > 0
+    ? pendingLogState.services
+    : (params.get("services")?.split(",").filter(Boolean) ?? []);
   const [allServices, setAllServices] = useState<string[]>([]);
   const [activeService, setActiveService] = useState<string>(ALL_SERVICES);
   const [logs, setLogs] = useState<string[]>([]);

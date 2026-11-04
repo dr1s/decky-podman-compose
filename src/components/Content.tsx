@@ -2,6 +2,7 @@ import { DialogButton, Navigation, PanelSection, PanelSectionRow, showModal } fr
 import { getHomeDir } from "../api";
 import { ALL_SERVICES, LOGS_ROUTE, STATS_ROUTE } from "../constants";
 import { useStacks } from "../hooks/useStacks";
+import { pendingLogState, pendingStatsState } from "../routeState";
 
 import { ActionsPanel } from "./ActionsPanel";
 import { DirectoryBrowserModal } from "./DirectoryBrowserModal";
@@ -48,6 +49,8 @@ export function Content() {
   const openLogs = () => {
     if (selectedStack === undefined) return;
     const svcs = selectedService === ALL_SERVICES ? [] : [selectedService];
+    pendingLogState.stackName = selectedStack;
+    pendingLogState.services = svcs;
     const servicesParam = svcs.length > 0 ? `&services=${encodeURIComponent(svcs.join(","))}` : "";
     Navigation.Navigate(`${LOGS_ROUTE}?stack=${encodeURIComponent(selectedStack)}${servicesParam}`);
     Navigation.CloseSideMenus();
@@ -55,6 +58,7 @@ export function Content() {
 
   const openStats = () => {
     if (selectedStack === undefined) return;
+    pendingStatsState.stackName = selectedStack;
     Navigation.Navigate(`${STATS_ROUTE}?stack=${encodeURIComponent(selectedStack)}`);
     Navigation.CloseSideMenus();
   };

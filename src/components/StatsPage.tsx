@@ -8,6 +8,7 @@ import {
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { getStackStats } from "../api";
 import { STATS_REFRESH_INTERVAL_MS } from "../constants";
+import { pendingStatsState } from "../routeState";
 import type { ContainerStats } from "../types";
 
 interface StatsPageShellProps {
@@ -81,7 +82,7 @@ function Sparkline({ values, color, max }: { values: number[]; color: string; ma
 
 export function StatsPage({ location }: { location?: { search?: string } }) {
   const params = new URLSearchParams(location?.search ?? window.location.search);
-  const stackName = params.get("stack") || "";
+  const stackName = pendingStatsState.stackName || params.get("stack") || "";
   const [stats, setStats] = useState<ContainerStats[]>([]);
   const [history, setHistory] = useState<Record<string, { cpu: number; mem: number }[]>>({});
   const tableRef = useRef<HTMLDivElement>(null);
