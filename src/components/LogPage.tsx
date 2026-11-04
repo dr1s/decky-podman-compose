@@ -55,6 +55,7 @@ export function LogPage({ location }: { location?: { search?: string } }) {
   const [allServices, setAllServices] = useState<string[]>([]);
   const [activeService, setActiveService] = useState<string>(ALL_SERVICES);
   const [logs, setLogs] = useState<string[]>([]);
+  const [streamStarted, setStreamStarted] = useState(false);
   const [actionOutput, setActionOutput] = useState<string>("");
   const [actionOutputLoading, setActionOutputLoading] = useState(false);
   const logIndexRef = useRef<number>(0);
@@ -86,6 +87,7 @@ export function LogPage({ location }: { location?: { search?: string } }) {
     if (!stackName) return;
 
     setLogs([]);
+    setStreamStarted(false);
     logIndexRef.current = 0;
 
     if (activeService === ACTION_TAB) {
@@ -100,6 +102,8 @@ export function LogPage({ location }: { location?: { search?: string } }) {
       const startResult = await startLogStream(stackName, servicesToStream);
       if (!startResult.success && mounted) {
         toaster.toast({ title: "Logs error", body: startResult.message || "Failed to start logs" });
+      } else if (startResult.success && mounted) {
+        setStreamStarted(true);
       }
       interval = setInterval(async () => {
         try {
@@ -186,7 +190,7 @@ export function LogPage({ location }: { location?: { search?: string } }) {
       ? actionOutputLoading
         ? "// loading action output..."
         : actionOutput || "// no action output yet"
-      : logs.length === 0
+      : !streamStarted
         ? "// waiting for logs..."
         : logs.join("\n");
 
